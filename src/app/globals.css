@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  @apply border-line;
+}
+
+body {
+  @apply bg-surface text-ink;
+  font-feature-settings: "tnum" 1;
+}
+
+.table-compact th,
+.table-compact td {
+  @apply px-3 py-2 text-sm;
+}
