@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getDashboardSnapshot } from "@/modules/dashboard/queries";
 import { formatCurrency } from "@/lib/format";
+import { OutstandingInvoicesTable } from "@/modules/dashboard/outstanding-invoices-table";
 
 export default async function HomePage() {
   const snapshot = await getDashboardSnapshot();
@@ -36,28 +36,7 @@ export default async function HomePage() {
           <CardTitle>Outstanding Invoice List</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table className="table-compact">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Issue Date</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Balance</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {snapshot.outstanding.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell>{row.number}</TableCell>
-                  <TableCell className="capitalize">{row.status}</TableCell>
-                  <TableCell>{row.issueDate}</TableCell>
-                  <TableCell>{formatCurrency(row.total, row.currency)}</TableCell>
-                  <TableCell>{formatCurrency(row.balance, row.currency)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <OutstandingInvoicesTable data={snapshot.outstanding} />
         </CardContent>
       </Card>
     </div>

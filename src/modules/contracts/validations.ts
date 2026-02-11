@@ -5,7 +5,7 @@ export const contractItemSchema = z.object({
   qualitySpecId: z.number().optional().nullable(),
   description: z.string().optional().nullable(),
   quantity: z.number(),
-  unitPrice: z.number(),
+  unitPrice: z.number().int(),
   uom: z.string(),
   deliveryStart: z.string().optional().nullable(),
   deliveryEnd: z.string().optional().nullable()

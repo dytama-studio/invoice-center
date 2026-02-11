@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { InvoiceDialog } from "@/modules/invoices/invoice-dialog";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/format";
+import { useActionToast } from "@/lib/use-action-toast";
 
 type InvoiceRow = {
   id: number;
@@ -19,6 +20,23 @@ type InvoiceRow = {
 };
 
 type ContractOption = { id: number; contractNo: string };
+
+function InvoiceDeleteForm({ id, onDelete }: { id: number; onDelete: (formData: FormData) => void }) {
+  const handleDelete = useActionToast({
+    action: onDelete,
+    successTitle: "Invoice deleted",
+    errorTitle: "Delete failed"
+  });
+
+  return (
+    <form action={handleDelete}>
+      <input type="hidden" name="id" value={id} />
+      <Button size="sm" variant="ghost" type="submit">
+        Delete
+      </Button>
+    </form>
+  );
+}
 
 export function InvoicesTable({
   data,
@@ -64,12 +82,7 @@ export function InvoicesTable({
               View
             </Button>
           </Link>
-          <form action={onDelete}>
-            <input type="hidden" name="id" value={row.original.id} />
-            <Button size="sm" variant="ghost" type="submit">
-              Delete
-            </Button>
-          </form>
+          <InvoiceDeleteForm id={row.original.id} onDelete={onDelete} />
         </div>
       )
     }

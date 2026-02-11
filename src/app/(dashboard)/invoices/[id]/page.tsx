@@ -1,17 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/format";
 import { InvoiceDialog } from "@/modules/invoices/invoice-dialog";
 import { getInvoiceDetail, getInvoiceLookups } from "@/modules/invoices/queries";
 import { updateInvoice } from "@/modules/invoices/actions";
 import { PaymentDialog } from "@/modules/payments/payment-dialog";
 import { createPayment, deletePayment } from "@/modules/payments/actions";
+import { InvoiceItemsTable } from "@/modules/invoices/invoice-items-table";
+import { InvoiceTaxesTable } from "@/modules/invoices/invoice-taxes-table";
+import { InvoicePaymentsTable } from "@/modules/invoices/invoice-payments-table";
 
-export default async function InvoiceDetailPage({ params }: { params: { id: string } }) {
-  const id = Number(params.id);
-  const [detail, lookups] = await Promise.all([getInvoiceDetail(id), getInvoiceLookups()]);
+type InvoiceDetailPageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
+  const { id } = await params;
+  const invoiceId = Number(id);
+  const [detail, lookups] = await Promise.all([getInvoiceDetail(invoiceId), getInvoiceLookups()]);
 
   if (!detail.invoice) {
     return <div className="text-sm text-muted">Invoice not found.</div>;
@@ -29,7 +34,7 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
     items: detail.items.map((item) => ({
       description: item.description,
       quantity: Number(item.quantity),
-      unitPrice: Number(item.unitPrice)
+      unitPrice: Math.round(Number(item.unitPrice))
     })),
     taxes: detail.taxes.map((tax) => ({ type: tax.type, rate: Number(tax.rate) }))
   };
@@ -59,24 +64,7 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
               <CardTitle>Invoice Items</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table className="table-compact">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Qty</TableHead>
-                    <TableHead>Unit Price</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {detail.items.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.description}</TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                      <TableCell>{formatCurrency(item.unitPrice, detail.invoice.currency)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <InvoiceItemsTable data={detail.items} currency={detail.invoice.currency} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -87,22 +75,7 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
               <CardTitle>Taxes</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table className="table-compact">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Rate</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {detail.taxes.map((tax) => (
-                    <TableRow key={tax.id}>
-                      <TableCell>{tax.type}</TableCell>
-                      <TableCell>{Number(tax.rate) * 100}%</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <InvoiceTaxesTable data={detail.taxes} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -114,34 +87,12 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
             </CardHeader>
             <CardContent className="space-y-3">
               <PaymentDialog triggerLabel="Record Payment" invoiceId={detail.invoice.id} onSubmit={createPayment} />
-              <Table className="table-compact">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {detail.payments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell>{payment.paymentDate}</TableCell>
-                      <TableCell>{formatCurrency(payment.amount, detail.invoice.currency)}</TableCell>
-                      <TableCell>{payment.method}</TableCell>
-                      <TableCell>
-                        <form action={deletePayment}>
-                          <input type="hidden" name="id" value={payment.id} />
-                          <input type="hidden" name="invoiceId" value={detail.invoice.id} />
-                          <Button size="sm" variant="ghost" type="submit">
-                            Delete
-                          </Button>
-                        </form>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <InvoicePaymentsTable
+                data={detail.payments}
+                currency={detail.invoice.currency}
+                invoiceId={detail.invoice.id}
+                onDelete={deletePayment}
+              />
             </CardContent>
           </Card>
         </TabsContent>

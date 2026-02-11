@@ -3,6 +3,7 @@ export function formatCurrency(value: number | string, currency = "IDR") {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency,
+    minimumFractionDigits: 0,
     maximumFractionDigits: 2
   }).format(amount);
 }

@@ -1,11 +1,14 @@
 "use client";
 
+import * as React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormRow } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { Select } from "@/components/ui2/select";
+import { useActionToast } from "@/lib/use-action-toast";
+import { formatIntegerInput, parseIntegerInput } from "@/lib/number";
 
 type InvoiceOption = { id: number; number: string };
 
@@ -20,8 +23,20 @@ export function PaymentDialog({
   invoices?: InvoiceOption[];
   onSubmit: (formData: FormData) => void;
 }) {
+  const [open, setOpen] = React.useState(false);
+  const [amountInput, setAmountInput] = React.useState("");
+  const handleSubmit = useActionToast({
+    action: onSubmit,
+    successTitle: "Payment recorded",
+    errorTitle: "Save failed",
+    onSuccess: () => {
+      setOpen(false);
+      setAmountInput("");
+    }
+  });
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm">{triggerLabel}</Button>
       </DialogTrigger>
@@ -29,7 +44,7 @@ export function PaymentDialog({
         <DialogHeader>
           <DialogTitle>Record Payment</DialogTitle>
         </DialogHeader>
-        <Form action={onSubmit}>
+        <Form action={handleSubmit}>
           {invoiceId ? (
             <input type="hidden" name="invoiceId" value={invoiceId} />
           ) : (
@@ -51,7 +66,14 @@ export function PaymentDialog({
             </FormField>
             <FormField>
               <Label>Amount</Label>
-              <Input type="number" step="0.01" name="amount" required />
+              <input type="hidden" name="amount" value={amountInput ? String(parseIntegerInput(amountInput)) : ""} />
+              <Input
+                type="text"
+                inputMode="numeric"
+                value={amountInput}
+                onChange={(event) => setAmountInput(formatIntegerInput(event.target.value))}
+                required
+              />
             </FormField>
             <FormField>
               <Label>Method</Label>

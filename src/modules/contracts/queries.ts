@@ -1,11 +1,11 @@
 import { db } from "@/db";
 import { companies, contractItems, contracts, qualitySpecs, commodities, regions } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { aliasedTable } from "drizzle-orm/pg-core";
+import { alias } from "drizzle-orm/pg-core";
 
 export async function getContracts() {
-  const seller = aliasedTable(companies, "seller");
-  const buyer = aliasedTable(companies, "buyer");
+  const seller = alias(companies, "seller");
+  const buyer = alias(companies, "buyer");
   return db
     .select({
       id: contracts.id,
