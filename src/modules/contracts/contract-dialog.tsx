@@ -6,22 +6,24 @@ import { Button } from "@/components/ui/button";
 import { Form, FormField, FormRow } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { Select } from "@/components/ui2/select";
+import { useActionToast } from "@/lib/use-action-toast";
+import { formatIntegerInput, parseIntegerInput } from "@/lib/number";
 
 type Option = { id: number; name: string; uom?: string; commodityId?: number };
 
-type ContractItem = {
+type ContractFormItem = {
   commodityId: number;
   qualitySpecId?: number | null;
   description?: string | null;
-  quantity: number;
-  unitPrice: number;
+  quantity: string;
+  unitPrice: string;
   uom: string;
   deliveryStart?: string | null;
   deliveryEnd?: string | null;
 };
 
-type ContractPayload = {
+type ContractFormPayload = {
   id?: number;
   contractNo: string;
   sellerCompanyId: number;
@@ -30,15 +32,24 @@ type ContractPayload = {
   contractDate: string;
   status: "draft" | "active" | "closed";
   notes?: string | null;
-  items: ContractItem[];
+  items: ContractFormItem[];
 };
 
-const emptyItem: ContractItem = {
+type ContractSubmitItem = Omit<ContractFormItem, "quantity" | "unitPrice"> & {
+  quantity: number;
+  unitPrice: number;
+};
+
+type ContractSubmitPayload = Omit<ContractFormPayload, "items"> & {
+  items: ContractSubmitItem[];
+};
+
+const emptyItem: ContractFormItem = {
   commodityId: 0,
   qualitySpecId: null,
   description: null,
-  quantity: 0,
-  unitPrice: 0,
+  quantity: "",
+  unitPrice: "",
   uom: ""
 };
 
@@ -52,14 +63,15 @@ export function ContractDialog({
   onSubmit
 }: {
   triggerLabel: string;
-  payload?: ContractPayload;
+  payload?: ContractFormPayload;
   companies: Option[];
   regions: Option[];
   commodities: Option[];
   qualitySpecs: Option[];
   onSubmit: (formData: FormData) => void;
 }) {
-  const [form, setForm] = React.useState<ContractPayload>({
+  const [open, setOpen] = React.useState(false);
+  const [form, setForm] = React.useState<ContractFormPayload>({
     id: payload?.id,
     contractNo: payload?.contractNo ?? "",
     sellerCompanyId: payload?.sellerCompanyId ?? 0,
@@ -68,10 +80,16 @@ export function ContractDialog({
     contractDate: payload?.contractDate ?? "",
     status: payload?.status ?? "draft",
     notes: payload?.notes ?? "",
-    items: payload?.items?.length ? payload.items : [emptyItem]
+    items: payload?.items?.length
+      ? payload.items.map((item) => ({
+          ...item,
+          quantity: String(Number(item.quantity || 0)),
+          unitPrice: String(Math.round(Number(item.unitPrice || 0)))
+        }))
+      : [emptyItem]
   });
 
-  function updateItem(index: number, key: keyof ContractItem, value: string) {
+  function updateItem(index: number, key: keyof ContractFormItem, value: string) {
     setForm((prev) => ({
       ...prev,
       items: prev.items.map((item, idx) =>
@@ -79,12 +97,13 @@ export function ContractDialog({
           ? {
               ...item,
               [key]:
-                key === "commodityId" ||
-                key === "qualitySpecId" ||
-                key === "quantity" ||
-                key === "unitPrice"
+                key === "commodityId"
                   ? Number(value)
-                  : value
+                  : key === "qualitySpecId"
+                    ? value ? Number(value) : null
+                    : key === "unitPrice"
+                      ? formatIntegerInput(value)
+                    : value
             }
           : item
       )
@@ -99,10 +118,24 @@ export function ContractDialog({
     setForm((prev) => ({ ...prev, items: prev.items.filter((_, idx) => idx !== index) }));
   }
 
-  const payloadValue: ContractPayload = form;
+  const payloadValue: ContractSubmitPayload = {
+    ...form,
+    items: form.items.map((item) => ({
+      ...item,
+      quantity: Number(item.quantity || 0),
+      unitPrice: parseIntegerInput(item.unitPrice)
+    }))
+  };
+
+  const handleSubmit = useActionToast({
+    action: onSubmit,
+    successTitle: payload ? "Contract updated" : "Contract created",
+    errorTitle: payload ? "Update failed" : "Create failed",
+    onSuccess: () => setOpen(false)
+  });
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm">{triggerLabel}</Button>
       </DialogTrigger>
@@ -110,7 +143,7 @@ export function ContractDialog({
         <DialogHeader>
           <DialogTitle>{payload ? "Edit Contract" : "New Contract"}</DialogTitle>
         </DialogHeader>
-        <Form action={onSubmit}>
+        <Form action={handleSubmit}>
           <input type="hidden" name="payload" value={JSON.stringify(payloadValue)} />
           <FormRow>
             <FormField>
@@ -133,7 +166,8 @@ export function ContractDialog({
             <FormField>
               <Label>Seller</Label>
               <Select
-                value={form.sellerCompanyId}
+                required
+                value={form.sellerCompanyId ? String(form.sellerCompanyId) : ""}
                 onChange={(event) => setForm((prev) => ({ ...prev, sellerCompanyId: Number(event.target.value) }))}
               >
                 <option value="">Select</option>
@@ -147,7 +181,8 @@ export function ContractDialog({
             <FormField>
               <Label>Buyer</Label>
               <Select
-                value={form.buyerCompanyId}
+                required
+                value={form.buyerCompanyId ? String(form.buyerCompanyId) : ""}
                 onChange={(event) => setForm((prev) => ({ ...prev, buyerCompanyId: Number(event.target.value) }))}
               >
                 <option value="">Select</option>
@@ -161,7 +196,8 @@ export function ContractDialog({
             <FormField>
               <Label>Region</Label>
               <Select
-                value={form.regionId}
+                required
+                value={form.regionId ? String(form.regionId) : ""}
                 onChange={(event) => setForm((prev) => ({ ...prev, regionId: Number(event.target.value) }))}
               >
                 <option value="">Select</option>
@@ -176,7 +212,7 @@ export function ContractDialog({
               <Label>Status</Label>
               <Select
                 value={form.status}
-                onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value as ContractPayload["status"] }))}
+                onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value as ContractFormPayload["status"] }))}
               >
                 <option value="draft">Draft</option>
                 <option value="active">Active</option>
@@ -193,7 +229,8 @@ export function ContractDialog({
                   <FormField>
                     <Label>Commodity</Label>
                     <Select
-                      value={item.commodityId}
+                      required
+                      value={item.commodityId ? String(item.commodityId) : ""}
                       onChange={(event) => {
                         const commodityId = Number(event.target.value);
                         const commodity = commodities.find((c) => c.id === commodityId);
@@ -229,7 +266,8 @@ export function ContractDialog({
                     <Label>Qty</Label>
                     <Input
                       type="number"
-                      step="0.001"
+                      step="any"
+                      inputMode="decimal"
                       value={item.quantity}
                       onChange={(event) => updateItem(index, "quantity", event.target.value)}
                     />
@@ -237,8 +275,8 @@ export function ContractDialog({
                   <FormField>
                     <Label>Unit Price</Label>
                     <Input
-                      type="number"
-                      step="0.01"
+                      type="text"
+                      inputMode="numeric"
                       value={item.unitPrice}
                       onChange={(event) => updateItem(index, "unitPrice", event.target.value)}
                     />

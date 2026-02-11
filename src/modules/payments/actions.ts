@@ -14,7 +14,7 @@ export async function createPayment(formData: FormData) {
     .values({
       invoiceId: values.invoiceId,
       paymentDate: values.paymentDate,
-      amount: values.amount.toString(),
+      amount: Math.round(values.amount).toString(),
       method: values.method ?? null,
       reference: values.reference ?? null,
       notes: values.notes ?? null
@@ -37,7 +37,7 @@ export async function updatePayment(formData: FormData) {
     .update(payments)
     .set({
       paymentDate: values.paymentDate,
-      amount: values.amount.toString(),
+      amount: Math.round(values.amount).toString(),
       method: values.method ?? null,
       reference: values.reference ?? null,
       notes: values.notes ?? null

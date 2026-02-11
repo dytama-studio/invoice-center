@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Form, FormField, FormRow } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { Select } from "@/components/ui2/select";
+import { useActionToast } from "@/lib/use-action-toast";
+import { formatIntegerInput, parseIntegerInput } from "@/lib/number";
 
 type Option = { id: number; contractNo: string };
 
@@ -34,7 +36,15 @@ type InvoicePayload = {
   taxes: InvoiceTax[];
 };
 
-const emptyItem: InvoiceItem = { description: "", quantity: 0, unitPrice: 0 };
+type InvoiceFormItem = {
+  description: string;
+  quantity: string;
+  unitPrice: string;
+};
+
+type InvoiceFormState = Omit<InvoicePayload, "items"> & { items: InvoiceFormItem[] };
+
+const emptyItem: InvoiceFormItem = { description: "", quantity: "", unitPrice: "" };
 
 export function InvoiceDialog({
   triggerLabel,
@@ -47,7 +57,8 @@ export function InvoiceDialog({
   contracts: Option[];
   onSubmit: (formData: FormData) => void;
 }) {
-  const [form, setForm] = React.useState<InvoicePayload>({
+  const [open, setOpen] = React.useState(false);
+  const [form, setForm] = React.useState<InvoiceFormState>({
     id: payload?.id,
     contractId: payload?.contractId ?? 0,
     proformaId: payload?.proformaId ?? null,
@@ -56,7 +67,13 @@ export function InvoiceDialog({
     dueDate: payload?.dueDate ?? "",
     currency: payload?.currency ?? "IDR",
     notes: payload?.notes ?? "",
-    items: payload?.items?.length ? payload.items : [emptyItem],
+    items: payload?.items?.length
+      ? payload.items.map((item) => ({
+          description: item.description,
+          quantity: String(item.quantity),
+          unitPrice: String(Math.round(Number(item.unitPrice || 0)))
+        }))
+      : [emptyItem],
     taxes: payload?.taxes?.length ? payload.taxes : [
       { type: "PPN", rate: 0.11 },
       { type: "PPH22", rate: 0 },
@@ -64,12 +81,15 @@ export function InvoiceDialog({
     ]
   });
 
-  function updateItem(index: number, key: keyof InvoiceItem, value: string) {
+  function updateItem(index: number, key: keyof InvoiceFormItem, value: string) {
     setForm((prev) => ({
       ...prev,
       items: prev.items.map((item, idx) =>
         idx === index
-          ? { ...item, [key]: key === "quantity" || key === "unitPrice" ? Number(value) : value }
+          ? {
+              ...item,
+              [key]: key === "unitPrice" ? formatIntegerInput(value) : value
+            }
           : item
       )
     }));
@@ -90,8 +110,25 @@ export function InvoiceDialog({
     setForm((prev) => ({ ...prev, items: prev.items.filter((_, idx) => idx !== index) }));
   }
 
+  const handleSubmit = useActionToast({
+    action: onSubmit,
+    successTitle: payload ? "Invoice updated" : "Invoice created",
+    errorTitle: payload ? "Update failed" : "Create failed",
+    onSuccess: () => setOpen(false)
+  });
+
+  const payloadValue: InvoicePayload = {
+    ...form,
+    items: form.items.map((item) => ({
+      ...item,
+      quantity: Number(item.quantity || 0),
+      unitPrice: parseIntegerInput(item.unitPrice)
+    })),
+    taxes: form.taxes.map((tax) => ({ ...tax, rate: Number(tax.rate || 0) }))
+  };
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm">{triggerLabel}</Button>
       </DialogTrigger>
@@ -99,8 +136,8 @@ export function InvoiceDialog({
         <DialogHeader>
           <DialogTitle>{payload ? "Edit Invoice" : "New Invoice"}</DialogTitle>
         </DialogHeader>
-        <Form action={onSubmit}>
-          <input type="hidden" name="payload" value={JSON.stringify(form)} />
+        <Form action={handleSubmit}>
+          <input type="hidden" name="payload" value={JSON.stringify(payloadValue)} />
           <FormRow>
             <FormField>
               <Label>Contract</Label>
@@ -154,7 +191,8 @@ export function InvoiceDialog({
                     <Label>Qty</Label>
                     <Input
                       type="number"
-                      step="0.001"
+                      step="any"
+                      inputMode="decimal"
                       value={item.quantity}
                       onChange={(event) => updateItem(index, "quantity", event.target.value)}
                     />
@@ -162,8 +200,8 @@ export function InvoiceDialog({
                   <FormField>
                     <Label>Unit Price</Label>
                     <Input
-                      type="number"
-                      step="0.01"
+                      type="text"
+                      inputMode="numeric"
                       value={item.unitPrice}
                       onChange={(event) => updateItem(index, "unitPrice", event.target.value)}
                     />

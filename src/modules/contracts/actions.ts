@@ -39,7 +39,7 @@ export async function createContract(formData: FormData) {
       qualitySpecId: item.qualitySpecId ?? null,
       description: item.description ?? null,
       quantity: item.quantity.toString(),
-      unitPrice: item.unitPrice.toString(),
+      unitPrice: Math.round(item.unitPrice).toString(),
       uom: item.uom,
       deliveryStart: item.deliveryStart ?? null,
       deliveryEnd: item.deliveryEnd ?? null
@@ -74,7 +74,7 @@ export async function updateContract(formData: FormData) {
       qualitySpecId: item.qualitySpecId ?? null,
       description: item.description ?? null,
       quantity: item.quantity.toString(),
-      unitPrice: item.unitPrice.toString(),
+      unitPrice: Math.round(item.unitPrice).toString(),
       uom: item.uom,
       deliveryStart: item.deliveryStart ?? null,
       deliveryEnd: item.deliveryEnd ?? null

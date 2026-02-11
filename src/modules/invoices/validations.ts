@@ -3,7 +3,7 @@ import { z } from "zod";
 export const invoiceItemSchema = z.object({
   description: z.string().min(1),
   quantity: z.number(),
-  unitPrice: z.number()
+  unitPrice: z.number().int()
 });
 
 export const invoiceTaxSchema = z.object({

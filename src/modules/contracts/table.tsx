@@ -4,6 +4,8 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { ContractDialog } from "@/modules/contracts/contract-dialog";
+import { useActionToast } from "@/lib/use-action-toast";
 
 type ContractRow = {
   id: number;
@@ -18,6 +20,23 @@ type ContractRow = {
 };
 
 type Option = { id: number; name: string; uom?: string; commodityId?: number };
+
+function ContractDeleteForm({ id, onDelete }: { id: number; onDelete: (formData: FormData) => void }) {
+  const handleDelete = useActionToast({
+    action: onDelete,
+    successTitle: "Contract deleted",
+    errorTitle: "Delete failed"
+  });
+
+  return (
+    <form action={handleDelete}>
+      <input type="hidden" name="id" value={id} />
+      <Button size="sm" variant="ghost" type="submit">
+        Delete
+      </Button>
+    </form>
+  );
+}
 
 export function ContractsTable({
   data,
@@ -60,12 +79,7 @@ export function ContractsTable({
               View
             </Button>
           </Link>
-          <form action={onDelete}>
-            <input type="hidden" name="id" value={row.original.id} />
-            <Button size="sm" variant="ghost" type="submit">
-              Delete
-            </Button>
-          </form>
+          <ContractDeleteForm id={row.original.id} onDelete={onDelete} />
         </div>
       )
     }

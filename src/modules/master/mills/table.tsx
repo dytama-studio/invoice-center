@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -7,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Form, FormField, FormRow } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { Select } from "@/components/ui2/select";
+import { useActionToast } from "@/lib/use-action-toast";
 
 type Mill = {
   id: number;
@@ -20,6 +22,160 @@ type Mill = {
 };
 
 type Option = { id: number; name: string };
+
+function MillEditDialog({
+  mill,
+  regions,
+  companies,
+  onUpdate
+}: {
+  mill: Mill;
+  regions: Option[];
+  companies: Option[];
+  onUpdate: (formData: FormData) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const handleUpdate = useActionToast({
+    action: onUpdate,
+    successTitle: "Mill updated",
+    errorTitle: "Update failed",
+    onSuccess: () => setOpen(false)
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          Edit
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Mill</DialogTitle>
+        </DialogHeader>
+        <Form action={handleUpdate}>
+          <input type="hidden" name="id" value={mill.id} />
+          <FormRow>
+            <FormField>
+              <Label>Code</Label>
+              <Input name="code" defaultValue={mill.code} required />
+            </FormField>
+            <FormField>
+              <Label>Name</Label>
+              <Input name="name" defaultValue={mill.name} required />
+            </FormField>
+            <FormField>
+              <Label>Region</Label>
+              <Select name="regionId" defaultValue={mill.regionId} required>
+                {regions.map((region) => (
+                  <option key={region.id} value={region.id}>
+                    {region.name}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+            <FormField>
+              <Label>Company</Label>
+              <Select name="companyId" defaultValue={mill.companyId} required>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.name}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          </FormRow>
+          <div className="flex justify-end gap-2">
+            <Button type="submit">Save</Button>
+          </div>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function MillCreateDialog({
+  regions,
+  companies,
+  onCreate
+}: {
+  regions: Option[];
+  companies: Option[];
+  onCreate: (formData: FormData) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const handleCreate = useActionToast({
+    action: onCreate,
+    successTitle: "Mill created",
+    errorTitle: "Create failed",
+    onSuccess: () => setOpen(false)
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm">New Mill</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>New Mill</DialogTitle>
+        </DialogHeader>
+        <Form action={handleCreate}>
+          <FormRow>
+            <FormField>
+              <Label>Code</Label>
+              <Input name="code" required />
+            </FormField>
+            <FormField>
+              <Label>Name</Label>
+              <Input name="name" required />
+            </FormField>
+            <FormField>
+              <Label>Region</Label>
+              <Select name="regionId" required>
+                {regions.map((region) => (
+                  <option key={region.id} value={region.id}>
+                    {region.name}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+            <FormField>
+              <Label>Company</Label>
+              <Select name="companyId" required>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.name}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          </FormRow>
+          <div className="flex justify-end gap-2">
+            <Button type="submit">Create</Button>
+          </div>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function MillDeleteForm({ id, onDelete }: { id: number; onDelete: (formData: FormData) => void }) {
+  const handleDelete = useActionToast({
+    action: onDelete,
+    successTitle: "Mill deleted",
+    errorTitle: "Delete failed"
+  });
+
+  return (
+    <form action={handleDelete}>
+      <input type="hidden" name="id" value={id} />
+      <Button size="sm" variant="ghost" type="submit">
+        Delete
+      </Button>
+    </form>
+  );
+}
 
 export function MillsTable({
   data,
@@ -46,60 +202,8 @@ export function MillsTable({
       header: "Actions",
       cell: ({ row }) => (
         <div className="flex gap-2">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                Edit
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Edit Mill</DialogTitle>
-              </DialogHeader>
-              <Form action={onUpdate}>
-                <input type="hidden" name="id" value={row.original.id} />
-                <FormRow>
-                  <FormField>
-                    <Label>Code</Label>
-                    <Input name="code" defaultValue={row.original.code} required />
-                  </FormField>
-                  <FormField>
-                    <Label>Name</Label>
-                    <Input name="name" defaultValue={row.original.name} required />
-                  </FormField>
-                  <FormField>
-                    <Label>Region</Label>
-                    <Select name="regionId" defaultValue={row.original.regionId} required>
-                      {regions.map((region) => (
-                        <option key={region.id} value={region.id}>
-                          {region.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
-                  <FormField>
-                    <Label>Company</Label>
-                    <Select name="companyId" defaultValue={row.original.companyId} required>
-                      {companies.map((company) => (
-                        <option key={company.id} value={company.id}>
-                          {company.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
-                </FormRow>
-                <div className="flex justify-end gap-2">
-                  <Button type="submit">Save</Button>
-                </div>
-              </Form>
-            </DialogContent>
-          </Dialog>
-          <form action={onDelete}>
-            <input type="hidden" name="id" value={row.original.id} />
-            <Button size="sm" variant="ghost" type="submit">
-              Delete
-            </Button>
-          </form>
+          <MillEditDialog mill={row.original} regions={regions} companies={companies} onUpdate={onUpdate} />
+          <MillDeleteForm id={row.original.id} onDelete={onDelete} />
         </div>
       )
     }
@@ -107,51 +211,7 @@ export function MillsTable({
 
   return (
     <div className="space-y-3">
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button size="sm">New Mill</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>New Mill</DialogTitle>
-          </DialogHeader>
-          <Form action={onCreate}>
-            <FormRow>
-              <FormField>
-                <Label>Code</Label>
-                <Input name="code" required />
-              </FormField>
-              <FormField>
-                <Label>Name</Label>
-                <Input name="name" required />
-              </FormField>
-              <FormField>
-                <Label>Region</Label>
-                <Select name="regionId" required>
-                  {regions.map((region) => (
-                    <option key={region.id} value={region.id}>
-                      {region.name}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-              <FormField>
-                <Label>Company</Label>
-                <Select name="companyId" required>
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.name}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-            </FormRow>
-            <div className="flex justify-end gap-2">
-              <Button type="submit">Create</Button>
-            </div>
-          </Form>
-        </DialogContent>
-      </Dialog>
+      <MillCreateDialog regions={regions} companies={companies} onCreate={onCreate} />
       <DataTable data={data} columns={columns} filterPlaceholder="Filter mills..." />
     </div>
   );

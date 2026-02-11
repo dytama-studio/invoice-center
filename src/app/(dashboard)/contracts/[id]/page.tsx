@@ -1,12 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ContractDialog } from "@/modules/contracts/contract-dialog";
 import { getContractDetail, getContractLookups } from "@/modules/contracts/queries";
 import { updateContract } from "@/modules/contracts/actions";
+import { ContractItemsTable } from "@/modules/contracts/contract-items-table";
 
-export default async function ContractDetailPage({ params }: { params: { id: string } }) {
-  const id = Number(params.id);
-  const [detail, lookups] = await Promise.all([getContractDetail(id), getContractLookups()]);
+type ContractDetailPageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function ContractDetailPage({ params }: ContractDetailPageProps) {
+  const { id } = await params;
+  const contractId = Number(id);
+  const [detail, lookups] = await Promise.all([getContractDetail(contractId), getContractLookups()]);
 
   if (!detail.contract) {
     return <div className="text-sm text-muted">Contract not found.</div>;
@@ -25,8 +30,8 @@ export default async function ContractDetailPage({ params }: { params: { id: str
       commodityId: item.commodityId,
       qualitySpecId: item.qualitySpecId,
       description: item.description,
-      quantity: Number(item.quantity),
-      unitPrice: Number(item.unitPrice),
+      quantity: String(item.quantity),
+      unitPrice: String(Math.round(Number(item.unitPrice))),
       uom: item.uom,
       deliveryStart: item.deliveryStart,
       deliveryEnd: item.deliveryEnd
@@ -58,28 +63,7 @@ export default async function ContractDetailPage({ params }: { params: { id: str
           <CardTitle>Items</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table className="table-compact">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Commodity</TableHead>
-                <TableHead>Quality</TableHead>
-                <TableHead>Qty</TableHead>
-                <TableHead>Unit Price</TableHead>
-                <TableHead>UOM</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {detail.items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.commodityName}</TableCell>
-                  <TableCell>{item.qualityName}</TableCell>
-                  <TableCell>{item.quantity}</TableCell>
-                  <TableCell>{item.unitPrice}</TableCell>
-                  <TableCell>{item.uom}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <ContractItemsTable data={detail.items} />
         </CardContent>
       </Card>
     </div>

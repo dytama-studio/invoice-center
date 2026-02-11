@@ -4,6 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
+import { useActionToast } from "@/lib/use-action-toast";
 
 type PaymentRow = {
   id: number;
@@ -13,6 +14,32 @@ type PaymentRow = {
   amount: string;
   method: string | null;
 };
+
+function PaymentDeleteForm({
+  id,
+  invoiceId,
+  onDelete
+}: {
+  id: number;
+  invoiceId: number;
+  onDelete: (formData: FormData) => void;
+}) {
+  const handleDelete = useActionToast({
+    action: onDelete,
+    successTitle: "Payment deleted",
+    errorTitle: "Delete failed"
+  });
+
+  return (
+    <form action={handleDelete}>
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="invoiceId" value={invoiceId} />
+      <Button size="sm" variant="ghost" type="submit">
+        Delete
+      </Button>
+    </form>
+  );
+}
 
 export function PaymentsTable({
   data,
@@ -34,13 +61,7 @@ export function PaymentsTable({
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
-        <form action={onDelete}>
-          <input type="hidden" name="id" value={row.original.id} />
-          <input type="hidden" name="invoiceId" value={row.original.invoiceId} />
-          <Button size="sm" variant="ghost" type="submit">
-            Delete
-          </Button>
-        </form>
+        <PaymentDeleteForm id={row.original.id} invoiceId={row.original.invoiceId} onDelete={onDelete} />
       )
     }
   ];

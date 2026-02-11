@@ -37,7 +37,7 @@ export async function createInvoice(formData: FormData) {
       invoiceId: invoice.id,
       description: item.description,
       quantity: item.quantity.toString(),
-      unitPrice: item.unitPrice.toString()
+      unitPrice: Math.round(item.unitPrice).toString()
     }))
   );
 
@@ -80,7 +80,7 @@ export async function updateInvoice(formData: FormData) {
       invoiceId: values.id,
       description: item.description,
       quantity: item.quantity.toString(),
-      unitPrice: item.unitPrice.toString()
+      unitPrice: Math.round(item.unitPrice).toString()
     }))
   );
 

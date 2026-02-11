@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/toast";
 
 export default function LoginPage() {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const { toast } = useToast();
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -23,11 +25,18 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError(result.error.message ?? "Invalid credentials");
+      const message = result.error.message ?? "Invalid credentials";
+      setError(message);
+      toast({
+        title: "Login failed",
+        description: message,
+        variant: "error"
+      });
       setLoading(false);
       return;
     }
 
+    toast({ title: "Login success", variant: "success" });
     window.location.href = "/home";
   }
 
