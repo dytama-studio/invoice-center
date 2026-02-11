@@ -12,7 +12,9 @@ export const auth = betterAuth({
   appName: 'Sentra Rent',
   baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
   secret: process.env.BETTER_AUTH_SECRET || '',
-  trustedOrigins: ['http://localhost:3000', 'http://localhost:3001'],
+  trustedOrigins: process.env.BETTER_AUTH_URL
+    ? [process.env.BETTER_AUTH_URL]
+    : ['http://localhost:3000'],
   // ↑ TAMBAH
 
   database: drizzleAdapter(db, {
